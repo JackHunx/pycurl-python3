@@ -13,13 +13,17 @@ class Test:
     def body_callback(self, buf):
         self.contents = self.contents + buf
 
-print >>sys.stderr, 'Testing', pycurl.version
+print('Testing', pycurl.version, file=sys.stderr)
 
-t = Test()
-c = pycurl.Curl()
-c.setopt(c.URL, 'http://curl.haxx.se/dev/')
-c.setopt(c.WRITEFUNCTION, t.body_callback)
-c.perform()
-c.close()
+try:
+    t = Test()
+    c = pycurl.Curl()
+    c.setopt(c.URL, sys.argv[1])
+    c.setopt(c.WRITEFUNCTION, t.body_callback)
+    c.perform()
+    c.close()
+#    print(t)
+    print(t.contents)
+except Exception as e:
+    print(e)
 
-print t.contents

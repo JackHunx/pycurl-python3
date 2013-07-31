@@ -10,6 +10,7 @@
 
 import sys
 import pycurl
+import time
 
 # We should ignore SIGPIPE when using pycurl.NOSIGNAL - see
 # the libcurl tutorial for more info.
@@ -31,7 +32,7 @@ try:
     if len(sys.argv) >= 3:
         num_conn = int(sys.argv[2])
 except:
-    print "Usage: %s <file with URLs to fetch> [<# of concurrent connections>]" % sys.argv[0]
+    print("Usage: %s <file with URLs to fetch> [<# of concurrent connections>]" % sys.argv[0])
     raise SystemExit
 
 
@@ -50,8 +51,8 @@ assert queue, "no URLs given"
 num_urls = len(queue)
 num_conn = min(num_conn, num_urls)
 assert 1 <= num_conn <= 10000, "invalid number of concurrent connections"
-print "PycURL %s (compiled against 0x%x)" % (pycurl.version, pycurl.COMPILE_LIBCURL_VERSION_NUM)
-print "----- Getting", num_urls, "URLs using", num_conn, "connections -----"
+print("PycURL %s (compiled against 0x%x)" % (pycurl.version, pycurl.COMPILE_LIBCURL_VERSION_NUM))
+print("----- Getting", num_urls, "URLs using", num_conn, "connections -----")
 
 
 # Pre-allocate a list of curl objects
@@ -79,6 +80,9 @@ while num_processed < num_urls:
         c.fp = open(filename, "wb")
         c.setopt(pycurl.URL, url)
         c.setopt(pycurl.WRITEDATA, c.fp)
+#        print(c.fp)
+#        c.fp.close()
+#        c.fp = None
         m.add_handle(c)
         # store some info
         c.filename = filename
@@ -92,16 +96,17 @@ while num_processed < num_urls:
     while 1:
         num_q, ok_list, err_list = m.info_read()
         for c in ok_list:
+            c.fp.flush()
             c.fp.close()
             c.fp = None
             m.remove_handle(c)
-            print "Success:", c.filename, c.url, c.getinfo(pycurl.EFFECTIVE_URL)
+            print("Success:", c.filename, c.url, c.getinfo(pycurl.EFFECTIVE_URL))
             freelist.append(c)
         for c, errno, errmsg in err_list:
             c.fp.close()
             c.fp = None
             m.remove_handle(c)
-            print "Failed: ", c.filename, c.url, errno, errmsg
+            print("Failed: ", c.filename, c.url, errno, errmsg)
             freelist.append(c)
         num_processed = num_processed + len(ok_list) + len(err_list)
         if num_q == 0:
@@ -120,3 +125,4 @@ for c in m.handles:
     c.close()
 m.close()
 
+#time.sleep(30)
